@@ -1,0 +1,21 @@
+[Unit]
+Description=WDTT Panel — VPS управление трафиком VK-звонков
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/wdtt-panel
+ExecStart=/opt/wdtt-panel/venv/bin/python /opt/wdtt-panel/app.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

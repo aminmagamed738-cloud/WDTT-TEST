@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WDTT Panel — Вход</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+  font-family:'Segoe UI',sans-serif;
+}
+.card{
+  background:rgba(255,255,255,.06);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.1);border-radius:16px;
+  padding:48px 40px;width:360px;box-shadow:0 24px 48px rgba(0,0,0,.5);
+}
+.logo{text-align:center;margin-bottom:32px}
+.logo svg{width:48px;height:48px}
+h1{color:#fff;font-size:22px;font-weight:700;text-align:center;margin-bottom:8px}
+p.sub{color:rgba(255,255,255,.45);text-align:center;font-size:13px;margin-bottom:28px}
+label{display:block;color:rgba(255,255,255,.7);font-size:13px;margin-bottom:6px}
+input[type=password]{
+  width:100%;padding:12px 16px;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.15);border-radius:10px;
+  color:#fff;font-size:15px;outline:none;transition:.2s;
+}
+input[type=password]:focus{border-color:#7c6ef5;background:rgba(124,110,245,.12)}
+button{
+  margin-top:20px;width:100%;padding:13px;background:#7c6ef5;
+  border:none;border-radius:10px;color:#fff;font-size:16px;
+  font-weight:600;cursor:pointer;transition:.2s;letter-spacing:.5px;
+}
+button:hover{background:#6a5ce0;transform:translateY(-1px)}
+.error{
+  margin-top:16px;padding:10px 14px;background:rgba(255,80,80,.12);
+  border:1px solid rgba(255,80,80,.3);border-radius:8px;
+  color:#ff8080;font-size:13px;text-align:center;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <svg viewBox="0 0 48 48" fill="none">
+      <circle cx="24" cy="24" r="24" fill="url(#g)"/>
+      <path d="M16 24 L22 30 L32 18" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="48" y2="48">
+          <stop offset="0%" stop-color="#7c6ef5"/>
+          <stop offset="100%" stop-color="#5c8ef5"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  <h1>WDTT Panel</h1>
+  <p class="sub">Управление VK-трафиком на VPS</p>
+  <form method="POST">
+    <label>Пароль</label>
+    <input type="password" name="password" placeholder="Введите пароль" autofocus required>
+    <button type="submit">Войти →</button>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  </form>
+</div>
+</body>
+</html>

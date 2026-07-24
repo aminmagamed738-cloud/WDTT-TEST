@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WDTT Panel</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d0f1a;--card:#151826;--card2:#1b1f30;
+  --border:rgba(255,255,255,.08);--accent:#7c6ef5;--accent2:#5c8ef5;
+  --text:#e8eaf0;--muted:rgba(232,234,240,.45);
+  --green:#36d87a;--red:#ff5c5c;--yellow:#f5c518;--blue:#4faaff;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* ── Layout ── */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.sidebar{
+  background:var(--card);border-right:1px solid var(--border);
+  padding:24px 0;display:flex;flex-direction:column;
+}
+.sidebar-logo{
+  padding:0 20px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.sidebar-logo svg{width:32px;height:32px;flex-shrink:0}
+.sidebar-logo span{font-size:17px;font-weight:700;color:#fff}
+.sidebar-logo small{display:block;font-size:11px;color:var(--muted)}
+.nav{padding:16px 12px;flex:1}
+.nav a{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;
+  transition:.15s;margin-bottom:4px;cursor:pointer;
+}
+.nav a:hover,.nav a.active{background:rgba(124,110,245,.12);color:var(--text)}
+.nav a.active{color:var(--accent)}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
+.sidebar-footer a{
+  display:block;color:var(--muted);font-size:13px;text-decoration:none;
+  padding:6px 0;transition:.15s;
+}
+.sidebar-footer a:hover{color:var(--text)}
+.main{padding:32px;overflow:auto}
+.page{display:none}
+.page.active{display:block}
+
+/* ── Header ── */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.page-title{font-size:22px;font-weight:700}
+.page-title small{display:block;font-size:13px;color:var(--muted);font-weight:400;margin-top:2px}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:9px 18px;
+  border-radius:8px;border:none;cursor:pointer;font-size:14px;
+  font-weight:600;transition:.15s;text-decoration:none;
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#6a5ce0}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn-danger{background:rgba(255,92,92,.15);color:var(--red);border:1px solid rgba(255,92,92,.25)}
+.btn-danger:hover{background:rgba(255,92,92,.25)}
+.btn-success{background:rgba(54,216,122,.12);color:var(--green);border:1px solid rgba(54,216,122,.2)}
+.btn-success:hover{background:rgba(54,216,122,.2)}
+.btn-warning{background:rgba(245,197,24,.1);color:var(--yellow);border:1px solid rgba(245,197,24,.2)}
+.btn-outline{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-outline:hover{background:rgba(255,255,255,.06)}
+
+/* ── Cards ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:20px 22px;
+}
+.stat-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.stat-value{font-size:28px;font-weight:700;color:#fff}
+.stat-value span{font-size:14px;color:var(--muted);font-weight:400}
+
+/* ── Profile cards ── */
+.profiles-grid{display:grid;gap:16px}
+.profile-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:22px;transition:.15s;
+}
+.profile-card:hover{border-color:rgba(124,110,245,.3)}
+.profile-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.profile-name{font-size:16px;font-weight:600;color:#fff;margin-bottom:4px}
+.profile-server{font-size:12px;color:var(--muted);font-family:monospace}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
+  border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;
+}
+.badge-connected{background:rgba(54,216,122,.12);color:var(--green);border:1px solid rgba(54,216,122,.2)}
+.badge-connecting{background:rgba(79,170,255,.1);color:var(--blue);border:1px solid rgba(79,170,255,.2)}
+.badge-stopped{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--border)}
+.badge-error{background:rgba(255,92,92,.1);color:var(--red);border:1px solid rgba(255,92,92,.2)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.dot-blink{animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.profile-meta{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.meta-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.meta-item b{color:var(--text)}
+.profile-hashes{
+  background:var(--bg);border-radius:8px;padding:10px 14px;
+  font-size:12px;color:var(--muted);font-family:monospace;
+  margin-bottom:16px;max-height:80px;overflow:hidden;
+}
+.profile-hashes span{display:block;color:var(--text)}
+.profile-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── Log view ── */
+.log-box{
+  background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  padding:16px;height:360px;overflow-y:auto;font-family:'Courier New',monospace;
+  font-size:12px;line-height:1.7;color:#adb5c0;
+}
+.log-box .log-ok{color:var(--green)}
+.log-box .log-err{color:var(--red)}
+.log-box .log-warn{color:var(--yellow)}
+
+/* ── Modal ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:100;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:32px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;
+  box-shadow:0 32px 64px rgba(0,0,0,.6);
+}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:24px;color:#fff}
+.form-group{margin-bottom:18px}
+label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
+input,textarea,select{
+  width:100%;padding:10px 14px;background:rgba(255,255,255,.05);
+  border:1px solid var(--border);border-radius:8px;color:var(--text);
+  font-size:14px;outline:none;transition:.2s;font-family:inherit;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);background:rgba(124,110,245,.08)}
+textarea{resize:vertical;min-height:100px;font-size:13px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+
+/* ── Info box ── */
+.info-box{
+  background:rgba(79,170,255,.07);border:1px solid rgba(79,170,255,.2);
+  border-radius:10px;padding:14px 16px;font-size:13px;color:rgba(232,234,240,.8);
+  margin-bottom:20px;line-height:1.6;
+}
+.info-box strong{color:var(--blue)}
+.code{
+  background:var(--bg);border-radius:6px;padding:12px 14px;
+  font-family:monospace;font-size:13px;color:var(--blue);
+  border:1px solid var(--border);display:block;margin:8px 0;
+  word-break:break-all;position:relative;
+}
+.copy-btn{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  background:rgba(124,110,245,.15);border:1px solid rgba(124,110,245,.2);
+  color:var(--accent);padding:3px 8px;border-radius:4px;cursor:pointer;
+  font-size:11px;transition:.15s;
+}
+.copy-btn:hover{background:rgba(124,110,245,.3)}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .main{padding:20px 16px}
+  .form-row{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="16" fill="url(#sg)"/>
+        <path d="M10 16 L14 20 L22 12" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="sg" x1="0" y1="0" x2="32" y2="32">
+            <stop offset="0%" stop-color="#7c6ef5"/><stop offset="100%" stop-color="#5c8ef5"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div>
+        <span>WDTT Panel</span>
+        <small>VK Traffic Manager</small>
+      </div>
+    </div>
+    <div class="nav">
+      <a onclick="showPage('dashboard')" class="active" id="nav-dashboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Дашборд
+      </a>
+      <a onclick="showPage('profiles')" id="nav-profiles">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Подключения
+      </a>
+      <a onclick="showPage('guide')" id="nav-guide">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        Гайд 3x-ui
+      </a>
+      <a onclick="showPage('settings')" id="nav-settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        Настройки
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <a href="/logout">→ Выйти</a>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">
+          Дашборд
+          <small>Состояние подключений в реальном времени</small>
+        </div>
+        <button class="btn btn-primary" onclick="showPage('profiles');document.getElementById('btn-add').click()">
+          + Новое подключение
+        </button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Активных</div>
+          <div class="stat-value" id="stat-connected">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Всего профилей</div>
+          <div class="stat-value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">SOCKS5 порты</div>
+          <div class="stat-value" id="stat-socks">—</div>
+        </div>
+      </div>
+      <div id="dash-profiles" class="profiles-grid"></div>
+    </div>
+
+    <!-- Profiles -->
+    <div class="page" id="page-profiles">
+      <div class="page-header">
+        <div class="page-title">
+          Подключения
+          <small>Управление VK-звонками и SOCKS5-туннелями</small>
+        </div>
+        <button class="btn btn-primary" id="btn-add" onclick="openAddModal()">+ Добавить</button>
+      </div>
+      <div id="profiles-list" class="profiles-grid"></div>
+      <div id="profiles-empty" style="display:none;text-align:center;padding:60px 20px;color:var(--muted)">
+        <div style="font-size:40px;margin-bottom:16px">🔌</div>
+        <div style="font-size:16px;margin-bottom:8px">Нет подключений</div>
+        <div style="font-size:13px">Добавьте VK-ссылку и адрес WDTT-сервера</div>
+      </div>
+    </div>
+
+    <!-- Guide -->
+    <div class="page" id="page-guide">
+      <div class="page-header">
+        <div class="page-title">Гайд: 3x-ui + WDTT Panel
+          <small>Как направить клиентский трафик через VK-звонки</small>
+        </div>
+      </div>
+      <div class="info-box">
+        <strong>Схема работы:</strong><br>
+        Клиент → 3x-ui (VLESS/VMess) → <strong>SOCKS5-прокси WDTT</strong> → WireGuard-туннель → VK TURN-сервер → WDTT-сервер → Интернет
+      </div>
+
+      <div style="display:grid;gap:20px">
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px">
+          <h3 style="margin-bottom:14px;color:#fff">Шаг 1 — Создайте подключение в панели</h3>
+          <ol style="padding-left:20px;line-height:2.2;color:var(--muted);font-size:14px">
+            <li>Вставьте ссылки VK-звонков (vk.com/call/join/...)</li>
+            <li>Укажите адрес вашего WDTT-сервера <code style="color:var(--blue)">IP:56000</code></li>
+            <li>Введите пароль подключения с WDTT-сервера</li>
+            <li>Нажмите «Запустить» — дождитесь статуса <span class="badge badge-connected">● подключено</span></li>
+            <li>Запишите <b style="color:#fff">SOCKS5 порт</b> (он слушает только на <code style="color:var(--blue)">127.0.0.1</code>)</li>
+          </ol>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px">
+          <h3 style="margin-bottom:14px;color:#fff">Шаг 2 — Настройте 3x-ui (Outbound)</h3>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:14px">В панели 3x-ui перейдите: <b style="color:#fff">Настройки → Xray → Outbounds</b>, добавьте новый:</p>
+          <div style="background:var(--bg);border-radius:8px;padding:16px;font-family:monospace;font-size:13px;color:#a8c0ff;border:1px solid var(--border)">
+<pre>{
+  "tag": "wdtt-out",
+  "protocol": "socks",
+  "settings": {
+    "servers": [
+      {
+        "address": "127.0.0.1",
+        "port": <b style="color:var(--green)">SOCKS_PORT</b>,
+        "users": []
+      }
+    ]
+  }
+}</pre>
+          </div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px">
+          <h3 style="margin-bottom:14px;color:#fff">Шаг 3 — Настройте Routing в 3x-ui</h3>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:6px">Перейдите: <b style="color:#fff">Настройки → Xray → Routing Rules</b>.</p>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:14px">
+            <b style="color:var(--yellow)">Важно:</b> правило ниже направляет через WDTT только российские адреса (<code>geoip:ru / geosite:ru</code>).
+            Чтобы проверить туннель командой <code>curl</code> или перенаправить <b>весь</b> TCP-трафик,
+            используйте второй вариант — без фильтра по IP/домену.
+          </p>
+
+          <p style="color:var(--text);font-size:13px;font-weight:600;margin-bottom:8px">Вариант A — только RU-трафик:</p>
+          <div style="background:var(--bg);border-radius:8px;padding:16px;font-family:monospace;font-size:13px;color:#a8c0ff;border:1px solid var(--border);margin-bottom:14px">
+<pre>{
+  "type": "field",
+  "outboundTag": "wdtt-out",
+  "ip": ["geoip:ru"],
+  "domain": ["geosite:ru"]
+}</pre>
+          </div>
+
+          <p style="color:var(--text);font-size:13px;font-weight:600;margin-bottom:8px">Вариант B — весь TCP (для теста или полного проксирования):</p>
+          <div style="background:var(--bg);border-radius:8px;padding:16px;font-family:monospace;font-size:13px;color:#a8c0ff;border:1px solid var(--border)">
+<pre>{
+  "type": "field",
+  "outboundTag": "wdtt-out",
+  "network": "tcp"
+}</pre>
+          </div>
+          <p style="color:var(--muted);font-size:13px;margin-top:10px">
+            SOCKS5 доступен только локальным сервисам этого VPS. Не открывайте его наружу через firewall или reverse-proxy без отдельной аутентификации.
+          </p>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px">
+          <h3 style="margin-bottom:14px;color:#fff">Шаг 4 — Проверка SOCKS5 напрямую</h3>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:10px">
+            Эта команда обращается к SOCKS5 напрямую с VPS — <b style="color:#fff">минуя 3x-ui</b>.
+            Она работает независимо от routing rules в Xray и проверяет именно WireGuard-туннель:
+          </p>
+          <div class="code">curl --socks5-hostname 127.0.0.1:<span style="color:var(--green)">SOCKS_PORT</span> https://ifconfig.me
+<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+          <p style="color:var(--muted);font-size:13px;margin-top:10px">
+            Должен вернуться IP WDTT-сервера (не IP вашего VPS). Если соединение отклоняется — туннель не поднят;
+            если возвращается IP вашего VPS — WireGuard работает, но профильный маршрут не применился (проверьте <code>ip rule show</code> на сервере).
+          </p>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px">
+          <h3 style="margin-bottom:14px;color:#fff">Дополнительно — несколько VK-звонков</h3>
+          <p style="color:var(--muted);font-size:14px;line-height:1.7">
+            Добавьте несколько ссылок в одном профиле — они будут работать параллельно,
+            увеличивая пропускную способность (агрегация каналов через разные TURN-серверы VK).
+            Рекомендуется <b style="color:#fff">3–5 звонков</b> для стабильной работы.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div class="page-title">Настройки<small>Панель администратора</small></div>
+      </div>
+      <div style="display:grid;gap:16px;max-width:480px">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px">
+          <h3 style="margin-bottom:20px;color:#fff">Сменить пароль</h3>
+          <div class="form-group">
+            <label>Текущий пароль</label>
+            <input type="password" id="old-pwd" placeholder="Текущий пароль">
+          </div>
+          <div class="form-group">
+            <label>Новый пароль</label>
+            <input type="password" id="new-pwd" placeholder="Минимум 6 символов">
+          </div>
+          <button class="btn btn-primary" onclick="changePassword()">Сохранить</button>
+          <div id="pwd-msg" style="margin-top:12px;font-size:13px"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">Новое подключение</h2>
+    <input type="hidden" id="edit-id">
+
+    <div class="form-group">
+      <label>Название профиля</label>
+      <input type="text" id="f-name" placeholder="Например: RU Tunnel #1">
+    </div>
+
+    <div class="form-group">
+      <label>WDTT-сервер (IP:PORT)</label>
+      <input type="text" id="f-server" placeholder="1.2.3.4:56000">
+    </div>
+
+    <div class="form-group">
+      <label>Пароль подключения (от WDTT-сервера)</label>
+      <input type="text" id="f-password" placeholder="Пароль из вашего WDTT-сервера">
+    </div>
+
+    <div class="form-group">
+      <label>VK-ссылки или хеши (каждый с новой строки)</label>
+      <textarea id="f-hashes" placeholder="https://vk.com/call/join/HASH1&#10;https://vk.com/call/join/HASH2&#10;&#10;Или просто хеши:&#10;HASH1&#10;HASH2"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>SOCKS5 порт (0 = авто)</label>
+        <input type="number" id="f-socks-port" value="0" min="0" max="65535">
+      </div>
+      <div class="form-group">
+        <label>Воркеры (кратно 9)</label>
+        <input type="number" id="f-workers" value="24" min="9" max="108" step="9">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Фингерпринт браузера</label>
+      <select id="f-fingerprint">
+        <option value="firefox">Firefox</option>
+        <option value="chrome">Chrome</option>
+        <option value="safari">Safari</option>
+        <option value="ios">iOS Safari</option>
+        <option value="android">Android Chrome</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveProfile()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log Modal -->
+<div class="modal-overlay" id="log-modal">
+  <div class="modal" style="width:720px;max-width:98vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h2 id="log-modal-title" style="margin-bottom:0">Логи</h2>
+      <button class="btn btn-outline btn-sm" onclick="closeLogModal()">Закрыть</button>
+    </div>
+    <div class="log-box" id="log-box"></div>
+  </div>
+</div>
+
+<script>
+// ── Navigation ──────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const nav = document.getElementById('nav-' + name);
+  if (nav) nav.classList.add('active');
+}
+
+// ── API helpers ─────────────────────────────────────────────────────────────
+async function api(method, url, body) {
+  const opts = {method, headers:{'Content-Type':'application/json'}};
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+// ── Status polling ──────────────────────────────────────────────────────────
+let _profiles = [];
+
+async function refreshStatus() {
+  try {
+    const data = await api('GET', '/api/status');
+    _profiles = data.profiles || [];
+    document.getElementById('stat-connected').textContent = data.connected;
+    document.getElementById('stat-total').textContent = data.total;
+    const socks = _profiles.filter(p => p.status==='connected').map(p => p.socks_port).filter(Boolean);
+    document.getElementById('stat-socks').innerHTML = socks.length
+      ? socks.map(s => `<span style="font-size:16px">${s}</span>`).join(' ')
+      : '—';
+    renderProfiles();
+  } catch(e) {}
+}
+
+setInterval(refreshStatus, 2000);
+refreshStatus();
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function statusBadge(p) {
+  const map = {
+    connected: `<span class="badge badge-connected"><span class="dot"></span>Подключено</span>`,
+    connecting: `<span class="badge badge-connecting"><span class="dot dot-blink"></span>Подключение...</span>`,
+    stopped:  `<span class="badge badge-stopped"><span class="dot"></span>Остановлен</span>`,
+    error:    `<span class="badge badge-error"><span class="dot"></span>Ошибка</span>`,
+  };
+  return map[p.status] || map.stopped;
+}
+
+function actionBtns(p) {
+  if (p.status === 'stopped' || p.status === 'error') {
+    return `
+      <button class="btn btn-success btn-sm" onclick="startProfile('${p.id}')">▶ Запустить</button>
+      <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">✏ Изменить</button>
+      <button class="btn btn-sm" style="color:var(--muted);border:1px solid var(--border)" onclick="showLogs('${p.id}','${p.name}')">📋 Лог</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteProfile('${p.id}')">🗑</button>`;
+  }
+  if (p.status === 'connecting') {
+    return `
+      <button class="btn btn-danger btn-sm" onclick="stopProfile('${p.id}')">⏹ Стоп</button>
+      <button class="btn btn-sm" style="color:var(--muted);border:1px solid var(--border)" onclick="showLogs('${p.id}','${p.name}')">📋 Лог</button>`;
+  }
+  // connected
+  return `
+    <button class="btn btn-warning btn-sm" onclick="restartProfile('${p.id}')">↺ Рестарт</button>
+    <button class="btn btn-danger btn-sm" onclick="stopProfile('${p.id}')">⏹ Стоп</button>
+    <button class="btn btn-sm" style="color:var(--muted);border:1px solid var(--border)" onclick="showLogs('${p.id}','${p.name}')">📋 Лог</button>`;
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function fmtBytes(n) {
+  if (!n) return '0 B';
+  const units = ['B','KB','MB','GB','TB'];
+  let i = 0;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return (i === 0 ? n : n.toFixed(1)) + ' ' + units[i];
+}
+
+function renderProfileCard(p) {
+  const socksInfo = p.status === 'connected' && p.socks_port
+    ? `<div class="meta-item">🔌 SOCKS5: <b>127.0.0.1:${p.socks_port}</b></div>`
+    : '';
+  const wgInfo = p.wg_ip ? `<div class="meta-item">🌐 WG IP: <b>${escHtml(p.wg_ip)}</b></div>` : '';
+  const errInfo = p.last_error
+    ? `<div style="margin-bottom:12px;color:var(--red);font-size:12px;white-space:pre-wrap;word-break:break-all">⚠ ${escHtml(p.last_error)}</div>` : '';
+  const hashesPreview = p.hashes && p.hashes.length
+    ? p.hashes.slice(0,3).map(h => `<span>${escHtml(h.length > 40 ? h.slice(0,40)+'...' : h)}</span>`).join('')
+      + (p.hashes.length > 3 ? `<span style="color:var(--muted)">...ещё ${p.hashes.length-3}</span>` : '')
+    : '<span style="color:var(--muted)">нет хешей</span>';
+
+  const st = p.socks_stats || {};
+  const hasTraffic = p.status === 'connected' && p.socks_port;
+  const trafficBlock = hasTraffic ? `
+    <div style="margin:10px 0 8px;padding:8px 10px;background:var(--card-bg,#1a1a2e);border:1px solid var(--border,#2a2a4a);border-radius:8px;font-size:12px">
+      <div style="color:var(--muted,#888);margin-bottom:6px;font-weight:600;letter-spacing:.04em">📊 ТРАФИК SOCKS5</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+        <div>
+          <div style="color:var(--muted,#888);font-size:10px">▲ отправлено</div>
+          <div style="font-weight:700;color:#4ade80">${fmtBytes(st.bytes_in||0)}</div>
+        </div>
+        <div>
+          <div style="color:var(--muted,#888);font-size:10px">▼ получено</div>
+          <div style="font-weight:700;color:#60a5fa">${fmtBytes(st.bytes_out||0)}</div>
+        </div>
+        <div>
+          <div style="color:var(--muted,#888);font-size:10px">соединения</div>
+          <div style="font-weight:700;color:${(st.active_connections||0)>0?'#f59e0b':'var(--muted,#888)'}">${st.active_connections||0} / ${st.total_connections||0}</div>
+        </div>
+      </div>
+    </div>` : '';
+
+  return `
+  <div class="profile-card" id="card-${p.id}">
+    <div class="profile-header">
+      <div>
+        <div class="profile-name">${escHtml(p.name)}</div>
+        <div class="profile-server">${escHtml(p.server)}</div>
+      </div>
+      ${statusBadge(p)}
+    </div>
+    <div class="profile-meta">
+      <div class="meta-item">🔑 Хешей: <b>${p.hashes ? p.hashes.length : 0}</b></div>
+      <div class="meta-item">👥 Воркеры: <b>${p.workers}</b></div>
+      ${socksInfo}${wgInfo}
+    </div>
+    ${trafficBlock}
+    ${errInfo}
+    <div class="profile-hashes">${hashesPreview}</div>
+    <div class="profile-actions">${actionBtns(p)}</div>
+  </div>`;
+}
+
+function renderProfiles() {
+  const list = document.getElementById('profiles-list');
+  const dash = document.getElementById('dash-profiles');
+  const empty = document.getElementById('profiles-empty');
+  if (!_profiles.length) {
+    if (list) { list.innerHTML = ''; empty.style.display = 'block'; }
+    if (dash) dash.innerHTML = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  const html = _profiles.map(renderProfileCard).join('');
+  if (list) list.innerHTML = html;
+  if (dash) dash.innerHTML = html;
+}
+
+// ── Actions ─────────────────────────────────────────────────────────────────
+async function startProfile(id) {
+  const r = await api('POST', `/api/profiles/${id}/start`);
+  if (!r.ok) alert('Ошибка: ' + r.error);
+  refreshStatus();
+}
+async function stopProfile(id) {
+  await api('POST', `/api/profiles/${id}/stop`);
+  refreshStatus();
+}
+async function restartProfile(id) {
+  await api('POST', `/api/profiles/${id}/restart`);
+  refreshStatus();
+}
+async function deleteProfile(id) {
+  if (!confirm('Удалить профиль?')) return;
+  await api('DELETE', `/api/profiles/${id}`);
+  refreshStatus();
+}
+
+// ── Modals ───────────────────────────────────────────────────────────────────
+function openAddModal() {
+  document.getElementById('modal-title').textContent = 'Новое подключение';
+  document.getElementById('edit-id').value = '';
+  ['name','server','password','hashes'].forEach(f => document.getElementById('f-'+f).value = '');
+  document.getElementById('f-socks-port').value = 0;
+  document.getElementById('f-workers').value = 24;
+  document.getElementById('f-fingerprint').value = 'firefox';
+  document.getElementById('modal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const p = _profiles.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('modal-title').textContent = 'Изменить профиль';
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-name').value = p.name;
+  document.getElementById('f-server').value = p.server;
+  document.getElementById('f-password').value = p.password;
+  document.getElementById('f-hashes').value = (p.hashes || []).join('\n');
+  document.getElementById('f-socks-port').value = p.socks_port || 0;
+  document.getElementById('f-workers').value = p.workers || 24;
+  document.getElementById('f-fingerprint').value = p.fingerprint || 'firefox';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+async function saveProfile() {
+  const id = document.getElementById('edit-id').value;
+  const data = {
+    name:       document.getElementById('f-name').value,
+    server:     document.getElementById('f-server').value.trim(),
+    password:   document.getElementById('f-password').value,
+    hashes:     document.getElementById('f-hashes').value,
+    socks_port: parseInt(document.getElementById('f-socks-port').value) || 0,
+    workers:    parseInt(document.getElementById('f-workers').value) || 24,
+    fingerprint:document.getElementById('f-fingerprint').value,
+  };
+  let r;
+  if (id) r = await api('PUT', `/api/profiles/${id}`, data);
+  else r = await api('POST', '/api/profiles', data);
+  if (r.error) { alert('Ошибка: ' + r.error); return; }
+  closeModal();
+  refreshStatus();
+}
+
+// ── Log viewer ───────────────────────────────────────────────────────────────
+let _logSource = null;
+function showLogs(id, name) {
+  document.getElementById('log-modal-title').textContent = 'Лог: ' + name;
+  document.getElementById('log-box').innerHTML = '';
+  document.getElementById('log-modal').classList.add('open');
+  if (_logSource) { _logSource.close(); _logSource = null; }
+  _logSource = new EventSource(`/api/profiles/${id}/logs`);
+  _logSource.onmessage = e => {
+    const box = document.getElementById('log-box');
+    const line = JSON.parse(e.data);
+    const div = document.createElement('div');
+    div.className = line.includes('✓') ? 'log-ok' :
+                    line.includes('ОШИБКА') || line.includes('FATAL') ? 'log-err' :
+                    line.includes('[!]') || line.includes('warn') ? 'log-warn' : '';
+    div.textContent = line;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  };
+}
+function closeLogModal() {
+  document.getElementById('log-modal').classList.remove('open');
+  if (_logSource) { _logSource.close(); _logSource = null; }
+}
+
+// ── Settings ─────────────────────────────────────────────────────────────────
+async function changePassword() {
+  const old = document.getElementById('old-pwd').value;
+  const nw  = document.getElementById('new-pwd').value;
+  const msg = document.getElementById('pwd-msg');
+  const r = await api('POST', '/api/change-password', {old_password: old, new_password: nw});
+  if (r.ok) {
+    msg.style.color = 'var(--green)'; msg.textContent = '✓ Пароль изменён';
+    document.getElementById('old-pwd').value = '';
+    document.getElementById('new-pwd').value = '';
+  } else {
+    msg.style.color = 'var(--red)'; msg.textContent = '✗ ' + r.error;
+  }
+}
+
+// ── Copy helper ───────────────────────────────────────────────────────────────
+function copyCode(btn) {
+  const text = btn.parentElement.textContent.replace('Копировать','').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Скопировано!';
+    setTimeout(() => btn.textContent = 'Копировать', 1500);
+  });
+}
+
+// Close modal on overlay click
+document.getElementById('modal').addEventListener('click', e => { if(e.target===e.currentTarget)closeModal(); });
+document.getElementById('log-modal').addEventListener('click', e => { if(e.target===e.currentTarget)closeLogModal(); });
+</script>
+</body>
+</html>
